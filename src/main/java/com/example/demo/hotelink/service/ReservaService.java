@@ -1,8 +1,10 @@
 package com.example.demo.hotelink.service;
 
 import com.example.demo.hotelink.model.Reserva;
+import com.example.demo.hotelink.model.Factura;
 import com.example.demo.hotelink.model.Habitacion;
 import com.example.demo.hotelink.repository.ReservaRepository;
+import com.example.demo.hotelink.repository.FacturaRepository;
 import com.example.demo.hotelink.repository.HabitacionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class ReservaService {
@@ -21,13 +24,19 @@ public class ReservaService {
     @Autowired
     private HabitacionRepository habitacionRepo;
 
+    @Autowired
+    private HabitacionRepository habitacionRepository;
+
+    @Autowired
+    private FacturaRepository facturaRepository;
+
     //Obtener todas las reservas
     public ResponseEntity<?> findAll() {
         List<Reserva> lista = repo.findAll();
 
-        if (lista.isEmpty()) {
-            return ResponseEntity.status(404).body("No hay reservas registradas");
-        }
+        // if (lista.isEmpty()) {
+        //     return ResponseEntity.status(404).body("No hay reservas registradas");
+        // }
 
         return ResponseEntity.ok(lista);
     }
@@ -58,7 +67,7 @@ public class ReservaService {
             Long idHab = r.getHabitacion().getId();
 
             //Verificar solapamiento de reservas
-            List<Reserva> solapes = repo.findByHabitacionIdAndFechaSalidaGreaterThanEqualAndFechaEntradaLessThanEqual(
+            List<Reserva> solapes = repo.findByHabitacionIdAndFechas(
                     idHab, r.getFechaEntrada(), r.getFechaSalida()
             );
 
@@ -107,6 +116,43 @@ public class ReservaService {
         repo.save(r);
 
         return ResponseEntity.ok(r);
+    }
+
+    public List<Reserva> findByUsuarioId(Long usuarioId) {
+        return repo.findByUsuarioId(usuarioId); 
+    }
+
+    // NUEVO MÉTODO: MAGIA DEL CHECK-OUT
+    public Factura realizarCheckOut(Long reservaId) {
+        // 1. Buscamos la reserva
+        Reserva reserva = repo.findById(reservaId)
+                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+
+        // 2. Calculamos los días que se ha quedado (mínimo 1 noche)
+        long noches = ChronoUnit.DAYS.between(reserva.getFechaEntrada(), reserva.getFechaSalida());
+        if (noches <= 0) {
+            noches = 1; 
+        }
+
+        // 3. Calculamos el total (noches * precio de la habitación)
+        double totalPagar = noches * reserva.getHabitacion().getPrecio();
+
+        // 4. Creamos la factura usando tus atributos exactos
+        Factura nuevaFactura = new Factura();
+        nuevaFactura.setReserva(reserva);
+        nuevaFactura.setUsuario(reserva.getUsuario()); // ¡Vinculamos al cliente!
+        nuevaFactura.setFecha(LocalDate.now());        // Tu variable exacta
+        nuevaFactura.setTotal(totalPagar);             
+        nuevaFactura.setEstado("PENDIENTE");           // Estado inicial de la factura
+        
+        Factura facturaGuardada = facturaRepository.save(nuevaFactura);
+
+        // 5. ¡Liberamos la habitación para el próximo cliente!
+        Habitacion habitacion = reserva.getHabitacion();
+        habitacion.setEstado("LIBRE"); 
+        habitacionRepository.save(habitacion);
+
+        return facturaGuardada;
     }
 
 }

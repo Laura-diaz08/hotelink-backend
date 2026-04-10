@@ -40,6 +40,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
                 
                 .requestMatchers("/auth/**").permitAll() // Dejamos libre /auth/login y /auth/register
+
+                .requestMatchers(HttpMethod.POST, "/reservas/{id}/checkout").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                 .anyRequest().authenticated()            
             )
             

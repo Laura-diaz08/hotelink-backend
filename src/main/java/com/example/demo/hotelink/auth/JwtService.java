@@ -14,12 +14,11 @@ import com.example.demo.hotelink.model.Rol;
 @Service
 public class JwtService {
 
-    // Clave simple
     private final Key secretKey = Keys.hmacShaKeyFor(
             "CLAVE_SUPER_SECRETA_PARA_MI_PROYECTO_123".getBytes()
     );
 
-    private final long expirationMs = 3600000; // 1 hora
+    private final long expirationMs = 3600000; 
 
     // Crear token
     public String generarToken(String nombre, Rol rol) {
@@ -82,17 +81,22 @@ public class JwtService {
 
     // Verifica si es un admin
     public boolean adminValido(String authHeader) {
-        //Verifica que exista el header y empiece con "Bearer "
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) 
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("Fallo 1: El header es nulo o no empieza por Bearer");
             return false;
+        }
 
         String token = authHeader.substring(7);
-
         String usuario = obtenerNombre(token);
-        if (usuario == null) 
+        
+        if (usuario == null) {
+            System.out.println("Fallo 2: No se pudo obtener el usuario del token");
             return false;
+        }
 
         Rol rol = obtenerRol(token);
+        System.out.println("El usuario es: " + usuario + " y su rol en el token es: " + rol);
+
         return Rol.ADMIN.equals(rol);
     }
 

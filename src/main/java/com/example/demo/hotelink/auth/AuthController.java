@@ -33,7 +33,7 @@ public class AuthController {
         Usuario userDB = usuarioService.buscarPorNombre(loginReq.getNombre());
 
         //Si el usuario no existe o la contraseña es incorrecta
-        // El primer parámetro es la contraseña plana (loginReq), el segundo es la encriptada (userDB)
+        //El primer parámetro es la contraseña plana, el segundo es la encriptada
         if (userDB == null || !passwordEncoder.matches(loginReq.getPassword(), userDB.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Nombre o contraseña inválidos"));

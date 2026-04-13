@@ -1,9 +1,11 @@
 package com.example.demo.hotelink.service;
 
 import com.example.demo.hotelink.model.Reserva;
+import com.example.demo.hotelink.model.TareaLimpieza;
 import com.example.demo.hotelink.model.Factura;
 import com.example.demo.hotelink.model.Habitacion;
 import com.example.demo.hotelink.repository.ReservaRepository;
+import com.example.demo.hotelink.repository.TareaLimpiezaRepository;
 import com.example.demo.hotelink.repository.FacturaRepository;
 import com.example.demo.hotelink.repository.HabitacionRepository;
 
@@ -29,6 +31,9 @@ public class ReservaService {
 
     @Autowired
     private FacturaRepository facturaRepository;
+
+    @Autowired
+    private TareaLimpiezaRepository tareaLimpiezaRepository;
 
     //Obtener todas las reservas
     public ResponseEntity<?> findAll() {
@@ -124,6 +129,11 @@ public class ReservaService {
 
     // NUEVO MÉTODO: MAGIA DEL CHECK-OUT
     public Factura realizarCheckOut(Long reservaId) {
+
+        // Comprobamos si la reserva ya fue facturada/finalizada
+        if (facturaRepository.existsByReservaId(reservaId)) {
+            throw new RuntimeException("¡Atención! Esta reserva ya tiene una factura generada y ya se le hizo el Check-Out.");
+        }
         // 1. Buscamos la reserva
         Reserva reserva = repo.findById(reservaId)
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
@@ -149,8 +159,17 @@ public class ReservaService {
 
         // 5. ¡Liberamos la habitación para el próximo cliente!
         Habitacion habitacion = reserva.getHabitacion();
-        habitacion.setEstado("LIBRE"); 
+        habitacion.setEstado("LIMPIEZA"); 
         habitacionRepository.save(habitacion);
+
+        TareaLimpieza nuevaTarea = new TareaLimpieza();
+        nuevaTarea.setHabitacion(habitacion);
+        nuevaTarea.setFecha(LocalDate.now());
+        nuevaTarea.setEstado("PENDIENTE");
+        tareaLimpiezaRepository.save(nuevaTarea);
+
+        reserva.setEstado("COMPLETADA"); 
+        repo.save(reserva);
 
         return facturaGuardada;
     }

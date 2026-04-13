@@ -37,7 +37,8 @@ public class SecurityConfig {
             // Reglas de acceso
             .authorizeHttpRequests(auth -> auth
                 // Dejamos pasar la petición options de Angular sin pedir token
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/api/tareas-limpieza/**").permitAll() 
                 
                 .requestMatchers("/auth/**").permitAll() // Dejamos libre /auth/login y /auth/register
 

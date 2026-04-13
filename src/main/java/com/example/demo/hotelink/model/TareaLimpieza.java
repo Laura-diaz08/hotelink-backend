@@ -1,5 +1,7 @@
 package com.example.demo.hotelink.model;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -13,6 +15,8 @@ public class TareaLimpieza {
     private Long id;
 
     private String estado; // PENDIENTE, EN_PROCESO, COMPLETADA
+
+    private LocalDate fecha;
 
     @ManyToOne
     private Habitacion habitacion;

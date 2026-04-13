@@ -103,6 +103,7 @@ public class ReservaController {
 
     @PostMapping("/{id}/checkout")
     public ResponseEntity<?> hacerCheckOut(@PathVariable Long id) {
+        
         try {
             Factura facturaGenerada = service.realizarCheckOut(id);
             

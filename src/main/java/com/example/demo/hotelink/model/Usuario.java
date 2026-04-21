@@ -28,6 +28,6 @@ public class Usuario {
 
     @Enumerated(EnumType.STRING)
     @NotNull    
-    private Rol rol; // "ADMIN" o "USER"
+    private Rol rol; 
 
 }

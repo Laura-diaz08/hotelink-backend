@@ -3,6 +3,7 @@ package com.example.demo.hotelink.controller;
 import com.example.demo.hotelink.auth.JwtService;
 import com.example.demo.hotelink.model.Factura;
 import com.example.demo.hotelink.model.Reserva;
+import com.example.demo.hotelink.repository.ReservaRepository;
 import com.example.demo.hotelink.service.ReservaService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ public class ReservaController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private ReservaRepository repository;
 
     //Obtener todas las reservas
     @GetMapping
@@ -117,5 +121,18 @@ public class ReservaController {
             e.printStackTrace(); // Esto forzará a que el error rojo salga en la consola si hay otro problema
             return ResponseEntity.badRequest().body("Error al hacer check-out: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/cliente/{id}")
+    public ResponseEntity<?> obtenerCitasPorCliente(
+            @RequestHeader(name="Authorization", required=false) String auth, 
+            @PathVariable Long id) {
+        
+        // Comprobamos el token
+        if (!jwtService.usuarioValido(auth)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+        
+        return ResponseEntity.ok(repository.findByUsuarioId(id)); // (o findByUsuarioId)
     }
 }

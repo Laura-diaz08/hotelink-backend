@@ -22,7 +22,7 @@ class JwtServiceTest {
     @Test
     void generarToken_DeberiaRetornarTokenNoNulo() {
         // Ejecutamos el método
-        String token = jwtService.generarToken("usuarioPrueba", Rol.USER);
+        String token = jwtService.generarToken("usuarioPrueba", Rol.CLIENTE);
 
         // Verificamos (Afirmamos) que el token no sea nulo ni esté en blanco
         assertNotNull(token, "El token generado no debería ser nulo");

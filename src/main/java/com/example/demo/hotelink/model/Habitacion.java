@@ -16,13 +16,18 @@ public class Habitacion {
     @NotNull
     private String numero;
 
-    private String tipo; // sencilla, doble, suite...
+    private String tipo; 
 
     private Double precio;
+
+    private Integer capacidad; 
+
+    @Column(length = 500)
+    private String descripcion;
 
     private String estado; // LIBRE, OCUPADA, LIMPIEZA, FUERA_SERVICIO
     
     @ManyToOne
-    @JoinColumn(name = "cliente_id") // Esta será la columna en la base de datos
+    @JoinColumn(name = "cliente_id")
     private Usuario cliente; 
 }

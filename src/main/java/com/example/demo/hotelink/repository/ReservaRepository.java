@@ -20,5 +20,6 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
         @Param("fechaInicio") LocalDate fechaInicio, 
         @Param("fechaFin") LocalDate fechaFin
     );
+
 }
 

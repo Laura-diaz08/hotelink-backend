@@ -19,4 +19,6 @@ public class Servicio {
     private String descripcion;
 
     private Double precio;
+
+    private Integer aforoMaximo;
 }

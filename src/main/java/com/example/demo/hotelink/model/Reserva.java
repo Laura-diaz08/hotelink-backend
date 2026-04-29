@@ -30,6 +30,8 @@ public class Reserva {
     @JoinColumn(name = "habitacion_id")
     private Habitacion habitacion;
 
+    private Integer numeroHuespedes;
+
     private String estado; // CONFIRMADA, CHECKIN, CHECKOUT, CANCELADA
     
     private Boolean checkIn = false;

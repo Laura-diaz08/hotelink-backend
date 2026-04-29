@@ -162,7 +162,7 @@ public class HabitacionService {
     }
 
     // 2. Método para crear la reserva de la habitacion
-    public ResponseEntity<?> crearReserva(Long habitacionId, Long clienteId, String fechaInicioStr, String fechaFinStr) {
+    public ResponseEntity<?> crearReserva(Long habitacionId, Long clienteId, String fechaInicioStr, String fechaFinStr, Integer numeroHuespedes) {
         try {
             LocalDate inicio = LocalDate.parse(fechaInicioStr);
             LocalDate fin = LocalDate.parse(fechaFinStr);
@@ -188,6 +188,7 @@ public class HabitacionService {
             nuevaReserva.setFechaEntrada(inicio);
             nuevaReserva.setFechaSalida(fin);
             nuevaReserva.setEstado("CONFIRMADA");
+            nuevaReserva.setNumeroHuespedes(numeroHuespedes);
             
             // 4. Guardamos en la base de datos
             reservaRepository.save(nuevaReserva);
@@ -197,5 +198,23 @@ public class HabitacionService {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error al procesar la reserva"));
         }
+    }
+
+    public List<Habitacion> obtenerHabitacionesActualizadas() {
+        List<Habitacion> habitaciones = repo.findAll();
+        LocalDate hoy = LocalDate.now();
+
+        for (Habitacion h : habitaciones) {
+            // Buscamos si hay una reserva activa para HOY en esta habitación
+            boolean estaReservadaHoy = reservaRepository.existsByHabitacionIdAndFecha(h.getId(), hoy);
+            
+            if (estaReservadaHoy) {
+                h.setEstado("OCUPADA");
+            } else if (!h.getEstado().equals("LIMPIEZA")) { 
+                h.setEstado("LIBRE");
+            }
+            repo.save(h);
+        }
+        return habitaciones;
     }
 }

@@ -42,6 +42,7 @@ public class SecurityConfig {
                 
                 .requestMatchers("/auth/**").permitAll() // Dejamos libre /auth/login y /auth/register
                 .requestMatchers("/error").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/habitaciones").permitAll()
 
                 .requestMatchers(HttpMethod.POST, "/reservas/{id}/checkout").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                 .anyRequest().authenticated()            

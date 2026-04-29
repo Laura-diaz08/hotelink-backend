@@ -26,4 +26,6 @@ public class Cita {
     private Servicio servicio;
 
     private LocalDateTime fechaHoraCita;
+
+    private String estado;
 }

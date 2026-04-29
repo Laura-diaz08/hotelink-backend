@@ -44,4 +44,26 @@ public class CitaService {
             return ResponseEntity.badRequest().body(Map.of("error", "Error al guardar la cita: " + e.getMessage()));
         }
     }
+
+    public void cambiarEstado(Long id, String estado) {
+        // Buscamos la cita por ID
+        Cita cita = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
+        
+        // Cambiamos el estado y guardamos
+        cita.setEstado(estado);
+        repo.save(cita);
+    }
+
+    public ResponseEntity<?> eliminarCita(Long id) {
+        try {
+            if (!repo.existsById(id)) {
+                return ResponseEntity.status(404).body(Map.of("error", "La cita no existe"));
+            }
+            repo.deleteById(id);
+            return ResponseEntity.ok(Map.of("mensaje", "Cita eliminada correctamente"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Error al eliminar: " + e.getMessage()));
+        }
+    }
 }

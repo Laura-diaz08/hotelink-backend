@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 @Service
 public class ReservaService {
@@ -27,60 +28,47 @@ public class ReservaService {
     private HabitacionRepository habitacionRepo;
 
     @Autowired
-    private HabitacionRepository habitacionRepository;
-
-    @Autowired
     private FacturaRepository facturaRepository;
 
     @Autowired
     private TareaLimpiezaRepository tareaLimpiezaRepository;
 
-    //Obtener todas las reservas
+    // Obtener todas
     public ResponseEntity<?> findAll() {
-        List<Reserva> lista = repo.findAll();
-
-        // if (lista.isEmpty()) {
-        //     return ResponseEntity.status(404).body("No hay reservas registradas");
-        // }
-
-        return ResponseEntity.ok(lista);
+        return ResponseEntity.ok(repo.findAll());
     }
 
-    //Buscar reserva por id
+    // Buscar por id
     public ResponseEntity<?> findById(Long id) {
         Reserva r = repo.findById(id).orElse(null);
-
         if (r == null) {
-            return ResponseEntity.status(404).body("Reserva no encontrada");
+            return ResponseEntity.status(404).body(Map.of("error", "Reserva no encontrada"));
         }
-
         return ResponseEntity.ok(r);
     }
 
-    //Guardar una nueva reserva
+    public List<Reserva> findByUsuarioId(Long usuarioId) {
+        return repo.findByUsuarioId(usuarioId); 
+    }
+
+    // Guardar una nueva reserva
     public ResponseEntity<?> save(Reserva r) {
         try {
-            //Validación de fechas
             if (r.getFechaEntrada() == null || r.getFechaSalida() == null) {
-                return ResponseEntity.badRequest().body("Las fechas son obligatorias");
+                return ResponseEntity.badRequest().body(Map.of("error", "Las fechas son obligatorias"));
             }
 
             if (!r.getFechaSalida().isAfter(r.getFechaEntrada())) {
-                return ResponseEntity.badRequest().body("La fecha de salida debe ser posterior a la fecha de entrada");
+                return ResponseEntity.badRequest().body(Map.of("error", "La fecha de salida debe ser posterior"));
             }
 
             Long idHab = r.getHabitacion().getId();
-
-            //Verificar solapamiento de reservas
-            List<Reserva> solapes = repo.findByHabitacionIdAndFechas(
-                    idHab, r.getFechaEntrada(), r.getFechaSalida()
-            );
+            List<Reserva> solapes = repo.findByHabitacionIdAndFechas(idHab, r.getFechaEntrada(), r.getFechaSalida());
 
             if (!solapes.isEmpty()) {
-                return ResponseEntity.badRequest().body("La habitación ya está ocupada en esas fechas");
+                return ResponseEntity.badRequest().body(Map.of("error", "La habitación ya está ocupada en esas fechas"));
             }
 
-            //Actualizar estado de la habitación a OCUPADA si la reserva incluye hoy
             Habitacion h = habitacionRepo.findById(idHab).orElse(null);
             if (h != null) {
                 LocalDate hoy = LocalDate.now();
@@ -90,77 +78,62 @@ public class ReservaService {
                 }
             }
 
+            r.setEstado("CONFIRMADA"); // Estado inicial
             Reserva saved = repo.save(r);
             return ResponseEntity.ok(saved);
 
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al guardar reserva: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", "Error al guardar reserva: " + e.getMessage()));
         }
     }
 
-    //Eliminar reserva por id
+    // Eliminar física (Admin)
     public ResponseEntity<?> deleteById(Long id) {
         if (!repo.existsById(id)) {
-            return ResponseEntity.status(404).body("Reserva no encontrada");
+            return ResponseEntity.status(404).body(Map.of("error", "Reserva no encontrada"));
         }
-
         repo.deleteById(id);
-        return ResponseEntity.ok("Reserva eliminada correctamente");
+        return ResponseEntity.ok(Map.of("mensaje", "Reserva eliminada correctamente"));
     }
 
-    
+    // --- MÉTODOS DE GESTIÓN (NUEVOS) ---
+
+    // 1. Check-In
     public ResponseEntity<?> checkIn(Long id) {
-
         Reserva r = repo.findById(id).orElse(null);
-
         if (r == null) {
-            return ResponseEntity.status(404).body("Reserva no encontrada");
+            return ResponseEntity.status(404).body(Map.of("error", "Reserva no encontrada"));
         }
-
         r.setCheckIn(true);
+        r.setEstado("CHECKIN"); 
         repo.save(r);
-
-        return ResponseEntity.ok(r);
+        return ResponseEntity.ok(Map.of("mensaje", "Check-In realizado con éxito"));
     }
 
-    public List<Reserva> findByUsuarioId(Long usuarioId) {
-        return repo.findByUsuarioId(usuarioId); 
-    }
-
-    // NUEVO MÉTODO: MAGIA DEL CHECK-OUT
+    // 2. Check-Out
     public Factura realizarCheckOut(Long reservaId) {
-
-        // Comprobamos si la reserva ya fue facturada/finalizada
         if (facturaRepository.existsByReservaId(reservaId)) {
-            throw new RuntimeException("¡Atención! Esta reserva ya tiene una factura generada y ya se le hizo el Check-Out.");
+            throw new RuntimeException("Esta reserva ya tiene una factura generada y ya se le hizo el Check-Out.");
         }
-        // 1. Buscamos la reserva
-        Reserva reserva = repo.findById(reservaId)
-                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+        Reserva reserva = repo.findById(reservaId).orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
 
-        // 2. Calculamos los días que se ha quedado (mínimo 1 noche)
         long noches = ChronoUnit.DAYS.between(reserva.getFechaEntrada(), reserva.getFechaSalida());
-        if (noches <= 0) {
-            noches = 1; 
-        }
+        if (noches <= 0) noches = 1; 
 
-        // 3. Calculamos el total (noches * precio de la habitación)
         double totalPagar = noches * reserva.getHabitacion().getPrecio();
 
-        // 4. Creamos la factura usando tus atributos exactos
         Factura nuevaFactura = new Factura();
         nuevaFactura.setReserva(reserva);
-        nuevaFactura.setUsuario(reserva.getUsuario()); // ¡Vinculamos al cliente!
-        nuevaFactura.setFecha(LocalDate.now());        // Tu variable exacta
+        nuevaFactura.setUsuario(reserva.getUsuario()); 
+        nuevaFactura.setFecha(LocalDate.now());        
         nuevaFactura.setTotal(totalPagar);             
-        nuevaFactura.setEstado("PENDIENTE");           // Estado inicial de la factura
+        nuevaFactura.setEstado("PENDIENTE");           
         
         Factura facturaGuardada = facturaRepository.save(nuevaFactura);
 
-        // 5. ¡Liberamos la habitación para el próximo cliente!
         Habitacion habitacion = reserva.getHabitacion();
         habitacion.setEstado("LIMPIEZA"); 
-        habitacionRepository.save(habitacion);
+        habitacionRepo.save(habitacion);
 
         TareaLimpieza nuevaTarea = new TareaLimpieza();
         nuevaTarea.setHabitacion(habitacion);
@@ -168,10 +141,46 @@ public class ReservaService {
         nuevaTarea.setEstado("PENDIENTE");
         tareaLimpiezaRepository.save(nuevaTarea);
 
+        reserva.setCheckOut(true);
         reserva.setEstado("COMPLETADA"); 
         repo.save(reserva);
 
         return facturaGuardada;
     }
 
+    // 3. Cancelar Reserva
+    public ResponseEntity<?> cancelarReserva(Long id) {
+        Reserva r = repo.findById(id).orElse(null);
+        if (r == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "Reserva no encontrada"));
+        }
+        
+        // En lugar de borrarla de la BD, simplemente cambiamos su estado
+        r.setEstado("CANCELADA");
+        repo.save(r);
+        
+        return ResponseEntity.ok(Map.of("mensaje", "Reserva cancelada correctamente"));
+    }
+
+    public List<Habitacion> obtenerHabitacionesParaAdmin() {
+        List<Habitacion> habitaciones = habitacionRepo.findAll();
+        LocalDate hoy = LocalDate.now();
+
+        for (Habitacion h : habitaciones) {
+            // 1. Si hay reserva hoy, marcar como OCUPADA
+            if (repo.existsByHabitacionIdAndFecha(h.getId(), hoy)) {
+                h.setEstado("OCUPADA");
+            } 
+            // 2. Si no hay reserva y estaba ocupada, volver a LIBRE 
+            // (a menos que esté en LIMPIEZA)
+            else if ("OCUPADA".equals(h.getEstado())) {
+                h.setEstado("LIBRE");
+            }
+            
+            // Guardamos el cambio de estado en la BD
+            habitacionRepo.save(h);
+        }
+        
+        return habitaciones;
+    }
 }

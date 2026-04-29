@@ -45,4 +45,27 @@ public class CitaController {
         
         return ResponseEntity.ok(repository.findByUsuarioId(id)); 
     }
+
+    
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<?> actualizarEstadoCita(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String nuevoEstado = body.get("estado");
+
+        service.cambiarEstado(id, nuevoEstado);
+        
+        return ResponseEntity.ok().body("Estado actualizado correctamente");
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarCita(
+            @RequestHeader(name="Authorization", required=false) String auth,
+            @PathVariable Long id) {
+
+        // Validamos que el usuario esté logueado
+        if (!jwtService.usuarioValido(auth)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+        }
+
+        return service.eliminarCita(id);
+    }
 }

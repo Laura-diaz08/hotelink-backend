@@ -21,5 +21,13 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
         @Param("fechaFin") LocalDate fechaFin
     );
 
+    @Query("SELECT COUNT(r) > 0 FROM Reserva r " +
+           "WHERE r.habitacion.id = :habitacionId " +
+           "AND :fecha >= r.fechaEntrada " +
+           "AND :fecha < r.fechaSalida " +
+           "AND r.estado <> 'CANCELADA'")
+    boolean existsByHabitacionIdAndFecha(@Param("habitacionId") Long habitacionId, 
+                                         @Param("fecha") LocalDate fecha);
+
 }
 

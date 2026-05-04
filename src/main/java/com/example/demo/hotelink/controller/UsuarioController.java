@@ -87,4 +87,13 @@ public class UsuarioController {
     }
     
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@RequestHeader(name="Authorization", required=false) String auth,
+                                    @PathVariable Long id,
+                                    @RequestBody Usuario u) {
+        if (noEsAdmin(auth))
+            return ResponseEntity.status(403).body(Map.of("error","Solo ADMIN"));
+
+        return service.update(id, u);
+    }
 }

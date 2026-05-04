@@ -37,5 +37,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
        @Query("SELECT COUNT(DISTINCT r.habitacion) FROM Reserva r WHERE :hoy BETWEEN r.fechaEntrada AND r.fechaSalida AND r.estado <> 'CANCELADA'")
        long countHabitacionesOcupadasHoy(@Param("hoy") LocalDate hoy);
 
+       List<Reserva> findByFechaEntradaAndEstado(LocalDate fechaEntrada, String estado);
+       List<Reserva> findByFechaSalidaAndEstado(LocalDate fechaSalida, String estado);
+
 }
 

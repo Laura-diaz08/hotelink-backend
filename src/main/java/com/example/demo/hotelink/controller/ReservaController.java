@@ -96,19 +96,23 @@ public class ReservaController {
 
     // 2. Check-Out
     @PostMapping("/{id}/checkout")
-    public ResponseEntity<?> hacerCheckOut(@PathVariable Long id) {
+    public ResponseEntity<?> hacerCheckOut(
+            @RequestHeader(name="Authorization", required=false) String auth,
+            @PathVariable Long id) {
+        
+        if (!jwtService.usuarioValido(auth)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+        }
+
         try {
             Factura facturaGenerada = service.realizarCheckOut(id);
-            
-            // Tu excelente solución al bucle:
             Map<String, Object> respuesta = new HashMap<>();
             respuesta.put("mensaje", "Check-out realizado con éxito");
-            respuesta.put("total", facturaGenerada.getTotal()); 
-            
+            respuesta.put("total", facturaGenerada.getTotal());
             return ResponseEntity.ok(respuesta);
         } catch (Exception e) {
-            e.printStackTrace(); 
-            return ResponseEntity.badRequest().body(Map.of("error", "Error al hacer check-out: " + e.getMessage()));
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

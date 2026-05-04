@@ -75,4 +75,25 @@ public class UsuarioService {
     }
 
 
+    public ResponseEntity<?> update(Long id, Usuario u) {
+        Usuario existente = repo.findById(id).orElse(null);
+        if (existente == null) {
+            return ResponseEntity.status(404).body("Usuario no encontrado");
+        }
+
+        // Actualizamos solo los campos editables, mantenemos el rol y la password si no viene nueva
+        existente.setNombre(u.getNombre());
+        existente.setEmail(u.getEmail());
+        
+        // Solo actualizamos la password si viene una nueva
+        if (u.getPassword() != null && !u.getPassword().isBlank()) {
+            existente.setPassword(u.getPassword());
+        }
+
+        try {
+            return ResponseEntity.ok(repo.save(existente));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("Error actualizando usuario: " + e.getMessage());
+        }
+    }
 }

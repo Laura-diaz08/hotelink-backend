@@ -2,9 +2,11 @@ package com.example.demo.hotelink.service;
 
 import com.example.demo.hotelink.model.Habitacion;
 import com.example.demo.hotelink.model.Reserva;
+import com.example.demo.hotelink.model.TareaLimpieza;
 import com.example.demo.hotelink.model.Usuario;
 import com.example.demo.hotelink.repository.HabitacionRepository;
 import com.example.demo.hotelink.repository.ReservaRepository;
+import com.example.demo.hotelink.repository.TareaLimpiezaRepository;
 import com.example.demo.hotelink.repository.UsuarioRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class HabitacionService {
 
     @Autowired
     private ReservaRepository reservaRepository;
+
+    @Autowired 
+    private TareaLimpiezaRepository tareaLimpiezaRepository;
 
     private static final List<String> ESTADOS_VALIDOS = List.of("LIBRE", "OCUPADA", "MANTENIMIENTO");
 
@@ -84,18 +89,22 @@ public class HabitacionService {
     //Cambiar estado de una habitación
     public ResponseEntity<?> cambiarEstado(Long id, String nuevoEstado) {
         Habitacion h = repo.findById(id).orElse(null);
+        if (h == null) return ResponseEntity.status(404).body("Habitación no encontrada");
 
-        if (h == null) {
-            return ResponseEntity.status(404).body("Habitación no encontrada");
-        }
-
-        if (!ESTADOS_VALIDOS.contains(nuevoEstado.toUpperCase())) {
-            return ResponseEntity.badRequest()
-                    .body("Estado inválido. Estados permitidos: " + ESTADOS_VALIDOS);
-        }
+        if (!ESTADOS_VALIDOS.contains(nuevoEstado.toUpperCase()))
+            return ResponseEntity.badRequest().body("Estado inválido");
 
         h.setEstado(nuevoEstado.toUpperCase());
         repo.save(h);
+
+        // Si se pone en LIMPIEZA, creamos la tarea automáticamente
+        if (nuevoEstado.equalsIgnoreCase("LIMPIEZA")) {
+            TareaLimpieza tarea = new TareaLimpieza();
+            tarea.setHabitacion(h);
+            tarea.setFecha(LocalDate.now());
+            tarea.setEstado("PENDIENTE");
+            tareaLimpiezaRepository.save(tarea);
+        }
 
         return ResponseEntity.ok(h);
     }

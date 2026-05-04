@@ -169,4 +169,15 @@ public class HabitacionController {
             "ocupadas_repo", service.obtenerResumenDashboard().get("ocupadas")
         ));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@RequestHeader(name="Authorization", required=false) String auth,
+                                    @PathVariable Long id,
+                                    @RequestBody Habitacion h) {
+        if (!jwtService.adminValido(auth))
+            return ResponseEntity.status(403).body(Map.of("error","Solo ADMIN"));
+
+        h.setId(id);
+        return service.save(h);
+    }
 }

@@ -1,5 +1,5 @@
 const url = "http://localhost:8080/auth/login";
-const body = JSON.stringify({ nombre: "admin", password: "123" }); // Tu usuario de prueba
+const body = JSON.stringify({ nombre: "admin", password: "1234" }); // Tu usuario de prueba
 const cabeceras = { "Content-Type": "application/json" };
 
 const NUM_PETICIONES = 40; // Número de usuarios intentando entrar a la vez

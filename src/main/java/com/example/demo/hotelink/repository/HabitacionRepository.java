@@ -20,4 +20,8 @@ public interface HabitacionRepository extends JpaRepository<Habitacion, Long> {
            "(SELECT r.habitacion.id FROM Reserva r WHERE r.estado != 'CANCELADA' " +
            "AND r.fechaEntrada < :fin AND r.fechaSalida > :inicio)")
     List<Habitacion> findDisponiblesPorFechas(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("SELECT COUNT(h) FROM Habitacion h WHERE TRIM(UPPER(h.estado)) = TRIM(UPPER(:estado))")
+    long countByEstado(@Param("estado") String estado);
+    
 }

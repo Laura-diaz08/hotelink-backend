@@ -2,6 +2,7 @@ package com.example.demo.hotelink.service;
 
 import com.example.demo.hotelink.model.Reserva;
 import com.example.demo.hotelink.model.TareaLimpieza;
+import com.example.demo.hotelink.dto.ReservaDTO;
 import com.example.demo.hotelink.model.Factura;
 import com.example.demo.hotelink.model.Habitacion;
 import com.example.demo.hotelink.repository.ReservaRepository;
@@ -28,16 +29,18 @@ public class ReservaService {
     private HabitacionRepository habitacionRepo;
 
     @Autowired
+    private HabitacionService habitacionService;
+
+    @Autowired
     private FacturaRepository facturaRepository;
 
     @Autowired
     private TareaLimpiezaRepository tareaLimpiezaRepository;
 
     // Obtener todas
-    public ResponseEntity<?> findAll() {
-        return ResponseEntity.ok(repo.findAll());
+    public List<Reserva> findAll() {
+        return repo.findAll();
     }
-
     // Buscar por id
     public ResponseEntity<?> findById(Long id) {
         Reserva r = repo.findById(id).orElse(null);
@@ -163,24 +166,36 @@ public class ReservaService {
     }
 
     public List<Habitacion> obtenerHabitacionesParaAdmin() {
-        List<Habitacion> habitaciones = habitacionRepo.findAll();
-        LocalDate hoy = LocalDate.now();
+        // Llamamos al método actualizado del servicio de habitaciones
+        return habitacionService.obtenerHabitacionesActualizadas(); 
+    }
 
-        for (Habitacion h : habitaciones) {
-            // 1. Si hay reserva hoy, marcar como OCUPADA
-            if (repo.existsByHabitacionIdAndFecha(h.getId(), hoy)) {
-                h.setEstado("OCUPADA");
-            } 
-            // 2. Si no hay reserva y estaba ocupada, volver a LIBRE 
-            // (a menos que esté en LIMPIEZA)
-            else if ("OCUPADA".equals(h.getEstado())) {
-                h.setEstado("LIBRE");
-            }
-            
-            // Guardamos el cambio de estado en la BD
-            habitacionRepo.save(h);
+    public Double calcularTotal(Reserva reserva) {
+        if (reserva.getHabitacion() == null || reserva.getHabitacion().getPrecio() == null) {
+            return 0.0;
         }
-        
-        return habitaciones;
+        long noches = ChronoUnit.DAYS.between(reserva.getFechaEntrada(), reserva.getFechaSalida());
+        return noches * reserva.getHabitacion().getPrecio();
+    }
+
+    public ReservaDTO toDTO(Reserva reserva) {
+        ReservaDTO dto = new ReservaDTO();
+        dto.setId(reserva.getId());
+        dto.setFechaEntrada(reserva.getFechaEntrada());
+        dto.setFechaSalida(reserva.getFechaSalida());
+        dto.setEstado(reserva.getEstado());
+        dto.setCheckIn(reserva.getCheckIn());
+        dto.setCheckOut(reserva.getCheckOut());
+        dto.setNumeroHuespedes(reserva.getNumeroHuespedes());
+        dto.setTotal(calcularTotal(reserva));
+
+        if (reserva.getHabitacion() != null) {
+            dto.setNumeroHabitacion(reserva.getHabitacion().getNumero());
+            dto.setTipoHabitacion(reserva.getHabitacion().getTipo());
+        }
+        if (reserva.getUsuario() != null) {
+            dto.setNombreUsuario(reserva.getUsuario().getNombre());
+        }
+        return dto;
     }
 }

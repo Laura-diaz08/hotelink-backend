@@ -31,7 +31,7 @@ public class Reserva {
     private Habitacion habitacion;
 
     private Integer numeroHuespedes;
-
+    
     private String estado; // CONFIRMADA, CHECKIN, CHECKOUT, CANCELADA
     
     private Boolean checkIn = false;

@@ -205,16 +205,52 @@ public class HabitacionService {
         LocalDate hoy = LocalDate.now();
 
         for (Habitacion h : habitaciones) {
-            // Buscamos si hay una reserva activa para HOY en esta habitación
-            boolean estaReservadaHoy = reservaRepository.existsByHabitacionIdAndFecha(h.getId(), hoy);
+            // Buscamos si hay una reserva activa hoy usando el rango de fechas
+            boolean estaReservadaHoy = reservaRepository.existsByHabitacionIdAndFechaActual(h.getId(), hoy);
             
             if (estaReservadaHoy) {
                 h.setEstado("OCUPADA");
-            } else if (!h.getEstado().equals("LIMPIEZA")) { 
+            } else if (!"LIMPIEZA".equals(h.getEstado())) { 
                 h.setEstado("LIBRE");
             }
-            repo.save(h);
         }
         return habitaciones;
+    }
+
+    public Map<String, Object> obtenerResumenDashboard() {
+        List<Habitacion> habitaciones = repo.findAll();
+        long total = habitaciones.size();
+        
+        long ocupadas = 0;
+        long limpieza = 0;
+        double ingresosHoy = 0.0;
+        
+        LocalDate hoy = LocalDate.now();
+
+        for (Habitacion h : habitaciones) {
+            // Comprobamos si hay una reserva activa hoy
+            boolean estaOcupadaHoy = reservaRepository.existsByHabitacionIdAndFechaActual(h.getId(), hoy);
+            String estado = h.getEstado() != null ? h.getEstado().trim().toUpperCase() : "";
+
+            if (estaOcupadaHoy) {
+                ocupadas++;
+                // Usamos el precio real de la habitación
+                if (h.getPrecio() != null) {
+                    ingresosHoy += h.getPrecio();
+                }
+            } else if (estado.contains("LIMPIEZA")) {
+                limpieza++;
+            }
+        }
+
+        double porcentaje = (total > 0) ? ((double) ocupadas / total) * 100 : 0;
+
+        return Map.of(
+            "total", total,
+            "ocupadas", ocupadas,
+            "limpieza", limpieza,
+            "porcentajeOcupacion", Math.round(porcentaje),
+            "ingresosHoy", ingresosHoy
+        );
     }
 }

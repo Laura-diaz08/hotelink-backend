@@ -1,6 +1,7 @@
 package com.example.demo.hotelink.controller;
 
 import com.example.demo.hotelink.auth.JwtService;
+import com.example.demo.hotelink.dto.ReservaDTO;
 import com.example.demo.hotelink.model.Factura;
 import com.example.demo.hotelink.model.Reserva;
 import com.example.demo.hotelink.repository.ReservaRepository;
@@ -11,7 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/reservas")
@@ -27,13 +30,16 @@ public class ReservaController {
     @Autowired
     private ReservaRepository repository;
 
-    //Obtener todas las reservas
+    // Obtener todas las reservas
     @GetMapping
     public ResponseEntity<?> findAll(@RequestHeader(name="Authorization", required=false) String auth) {
         if (!jwtService.adminValido(auth))
             return ResponseEntity.status(403).body(Map.of("error","Solo ADMIN puede ver todas las reservas"));
 
-        return service.findAll();
+        List<ReservaDTO> dtos = service.findAll().stream()
+                .map(service::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     //Buscar reserva por id

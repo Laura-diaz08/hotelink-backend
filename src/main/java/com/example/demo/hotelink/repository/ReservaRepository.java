@@ -29,5 +29,13 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     boolean existsByHabitacionIdAndFecha(@Param("habitacionId") Long habitacionId, 
                                          @Param("fecha") LocalDate fecha);
 
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Reserva r " +
+              "WHERE r.habitacion.id = :habitacionId AND :hoy BETWEEN r.fechaEntrada AND r.fechaSalida AND r.estado <> 'CANCELADA'")
+       boolean existsByHabitacionIdAndFechaActual(@Param("habitacionId") Long habitacionId, @Param("hoy") LocalDate hoy);
+
+
+       @Query("SELECT COUNT(DISTINCT r.habitacion) FROM Reserva r WHERE :hoy BETWEEN r.fechaEntrada AND r.fechaSalida AND r.estado <> 'CANCELADA'")
+       long countHabitacionesOcupadasHoy(@Param("hoy") LocalDate hoy);
+
 }
 

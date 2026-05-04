@@ -137,4 +137,36 @@ public class HabitacionController {
 
         return service.deleteById(id);
     }
+
+    @GetMapping("/admin/resumen")
+    public ResponseEntity<?> getResumen(@RequestHeader(name="Authorization", required=false) String auth) {
+        // Imprimimos en la consola de tu servidor para ver qué token recibe exactamente
+        System.out.println("Token recibido en el Backend: " + auth);
+
+        if (!jwtService.adminValido(auth)) {
+            System.out.println("El token no es válido o no pertenece a un ADMIN.");
+            return ResponseEntity.status(403).build();
+        }
+            
+        return ResponseEntity.ok(service.obtenerResumenDashboard());
+    }
+
+    @GetMapping("/actualizadas")
+    public ResponseEntity<List<Habitacion>> getHabitacionesActualizadas() {
+        // Llamamos al método que ya tienes en tu Service de Java
+        List<Habitacion> lista = service.obtenerHabitacionesActualizadas();
+        return ResponseEntity.ok(lista);
+    }
+
+    @GetMapping("/admin/debug")
+    public ResponseEntity<?> debug(@RequestHeader(name="Authorization") String auth) {
+        if (!jwtService.adminValido(auth)) 
+            return ResponseEntity.status(403).build();
+            
+        // Devuelve el conteo real y el número total de habitaciones detectadas por el servicio
+        return ResponseEntity.ok(Map.of(
+            "total_repo", service.obtenerResumenDashboard().get("total"),
+            "ocupadas_repo", service.obtenerResumenDashboard().get("ocupadas")
+        ));
+    }
 }

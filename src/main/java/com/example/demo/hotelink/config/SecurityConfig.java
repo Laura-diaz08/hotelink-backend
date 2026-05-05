@@ -42,6 +42,9 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/habitaciones").permitAll()
                 .requestMatchers(HttpMethod.GET, "/habitaciones").permitAll()
+                .requestMatchers("/contacto").permitAll()
+                .requestMatchers(HttpMethod.GET, "/opiniones").permitAll()
+                .requestMatchers(HttpMethod.GET, "/opiniones/estadisticas").permitAll()
                 .anyRequest().authenticated()            
             )
             

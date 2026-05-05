@@ -21,7 +21,15 @@ public class CargoReserva {
     @JoinColumn(name = "articulo_id")
     private Articulo articulo;
 
-    private Integer cantidad; 
+    private Integer cantidad;
+
+    private Double precioUnitario; // Precio en el momento del cargo
 
     private LocalDateTime fechaCargo;
+
+    // Método helper para calcular el subtotal
+    public Double getSubtotal() {
+        if (precioUnitario == null || cantidad == null) return 0.0;
+        return precioUnitario * cantidad;
+    }
 }

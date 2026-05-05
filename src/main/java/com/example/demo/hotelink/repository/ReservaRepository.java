@@ -40,5 +40,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
        List<Reserva> findByFechaEntradaAndEstado(LocalDate fechaEntrada, String estado);
        List<Reserva> findByFechaSalidaAndEstado(LocalDate fechaSalida, String estado);
 
+       List<Reserva> findByFechaEntradaLessThanEqualAndEstado(LocalDate fecha, String estado);
+
 }
 

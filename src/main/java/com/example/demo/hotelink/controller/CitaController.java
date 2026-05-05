@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -67,5 +68,23 @@ public class CitaController {
         }
 
         return service.eliminarCita(id);
+    }
+
+    @GetMapping("/usuario/{usuarioId}/entre-fechas")
+    public ResponseEntity<?> getCitasEntresFechas(
+            @RequestHeader(name="Authorization", required=false) String auth,
+            @PathVariable Long usuarioId,
+            @RequestParam String inicio,
+            @RequestParam String fin) {
+
+        if (!jwtService.usuarioValido(auth))
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+
+        LocalDateTime inicioFecha = LocalDateTime.parse(inicio + "T00:00:00");
+        LocalDateTime finFecha = LocalDateTime.parse(fin + "T23:59:59");
+
+        return ResponseEntity.ok(
+            repository.findByUsuarioIdAndFechaHoraCitaBetween(usuarioId, inicioFecha, finFecha)
+        );
     }
 }

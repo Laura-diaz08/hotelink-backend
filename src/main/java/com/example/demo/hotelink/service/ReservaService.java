@@ -7,6 +7,7 @@ import com.example.demo.hotelink.model.Factura;
 import com.example.demo.hotelink.model.Habitacion;
 import com.example.demo.hotelink.repository.ReservaRepository;
 import com.example.demo.hotelink.repository.TareaLimpiezaRepository;
+import com.example.demo.hotelink.repository.CargoReservaRepository;
 import com.example.demo.hotelink.repository.FacturaRepository;
 import com.example.demo.hotelink.repository.HabitacionRepository;
 
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -36,6 +38,12 @@ public class ReservaService {
 
     @Autowired
     private TareaLimpiezaRepository tareaLimpiezaRepository;
+
+    @Autowired
+    private CargoReservaRepository cargoReservaRepository;
+
+    @Autowired
+    private com.example.demo.hotelink.repository.CitaRepository citaRepository;
 
     // Obtener todas
     public List<Reserva> findAll() {
@@ -116,26 +124,52 @@ public class ReservaService {
     // 2. Check-Out
     public Factura realizarCheckOut(Long reservaId) {
         if (facturaRepository.existsByReservaId(reservaId)) {
-            throw new RuntimeException("Esta reserva ya tiene una factura generada y ya se le hizo el Check-Out.");
+            throw new RuntimeException("Esta reserva ya tiene una factura generada.");
         }
-        Reserva reserva = repo.findById(reservaId).orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+
+        Reserva reserva = repo.findById(reservaId)
+            .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
 
         long noches = ChronoUnit.DAYS.between(reserva.getFechaEntrada(), reserva.getFechaSalida());
-        if (noches <= 0) noches = 1; 
+        if (noches <= 0) noches = 1;
 
-        double totalPagar = noches * reserva.getHabitacion().getPrecio();
+        // Total habitación
+        double totalHabitacion = noches * reserva.getHabitacion().getPrecio();
+
+        // Total cargos adicionales (artículos)
+        Double totalCargos = cargoReservaRepository.calcularTotalCargos(reservaId);
+        if (totalCargos == null) totalCargos = 0.0;
+
+        // Total servicios (citas durante la estancia)
+        LocalDateTime inicioEstancia = reserva.getFechaEntrada().atStartOfDay();
+        LocalDateTime finEstancia = reserva.getFechaSalida().atTime(23, 59, 59);
+
+        List<com.example.demo.hotelink.model.Cita> citasEstancia = citaRepository
+            .findByUsuarioIdAndFechaHoraCitaBetween(
+                reserva.getUsuario().getId(),
+                inicioEstancia,
+                finEstancia
+            );
+
+        double totalServicios = citasEstancia.stream()
+            .filter(c -> !"CANCELADA".equals(c.getEstado()))
+            .mapToDouble(c -> c.getServicio() != null && c.getServicio().getPrecio() != null 
+                ? c.getServicio().getPrecio() : 0.0)
+            .sum();
+
+        double totalPagar = totalHabitacion + totalCargos + totalServicios;
 
         Factura nuevaFactura = new Factura();
         nuevaFactura.setReserva(reserva);
-        nuevaFactura.setUsuario(reserva.getUsuario()); 
-        nuevaFactura.setFecha(LocalDate.now());        
-        nuevaFactura.setTotal(totalPagar);             
-        nuevaFactura.setEstado("PENDIENTE");           
-        
+        nuevaFactura.setUsuario(reserva.getUsuario());
+        nuevaFactura.setFecha(LocalDate.now());
+        nuevaFactura.setTotal(totalPagar);
+        nuevaFactura.setEstado("PENDIENTE");
+
         Factura facturaGuardada = facturaRepository.save(nuevaFactura);
 
         Habitacion habitacion = reserva.getHabitacion();
-        habitacion.setEstado("LIMPIEZA"); 
+        habitacion.setEstado("LIMPIEZA");
         habitacionRepo.save(habitacion);
 
         TareaLimpieza nuevaTarea = new TareaLimpieza();
@@ -145,7 +179,7 @@ public class ReservaService {
         tareaLimpiezaRepository.save(nuevaTarea);
 
         reserva.setCheckOut(true);
-        reserva.setEstado("COMPLETADA"); 
+        reserva.setEstado("COMPLETADA");
         repo.save(reserva);
 
         return facturaGuardada;
@@ -192,9 +226,11 @@ public class ReservaService {
         if (reserva.getHabitacion() != null) {
             dto.setNumeroHabitacion(reserva.getHabitacion().getNumero());
             dto.setTipoHabitacion(reserva.getHabitacion().getTipo());
+            dto.setPrecioHabitacion(reserva.getHabitacion().getPrecio()); // añadir
         }
         if (reserva.getUsuario() != null) {
             dto.setNombreUsuario(reserva.getUsuario().getNombre());
+            dto.setUsuarioId(reserva.getUsuario().getId()); // añadir
         }
         return dto;
     }

@@ -11,5 +11,10 @@ import java.util.List;
 @Repository
 public interface CitaRepository extends JpaRepository<Cita, Long> {
     List<Cita> findByUsuarioId(Long usuarioId);
+
     int countByServicioIdAndFechaHoraCita(Long servicioId, LocalDateTime fechaHoraCita);
+
+    List<Cita> findByFechaHoraCitaBeforeAndEstadoNot(LocalDateTime fecha, String estado);
+
+    List<Cita> findByUsuarioIdAndFechaHoraCitaBetween(Long usuarioId, LocalDateTime inicio, LocalDateTime fin);
 }

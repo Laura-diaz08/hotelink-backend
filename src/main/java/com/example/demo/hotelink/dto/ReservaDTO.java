@@ -16,4 +16,6 @@ public class ReservaDTO {
     private String tipoHabitacion;
     private String nombreUsuario;
     private Double total;
+    private Long usuarioId;
+    private Double precioHabitacion;
 }

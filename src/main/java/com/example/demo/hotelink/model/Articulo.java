@@ -12,11 +12,14 @@ public class Articulo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nombre; // Ej: "Coca-Cola Minibar", "Toalla Extra", "Desayuno Buffet"
-    
-    // Puede ser "MINIBAR", "RESTAURANTE", "PETICION_HABITACION"
-    private String categoria; 
-    
-    // El precio que se sumará a la factura. (Una toalla extra podría ser 0.0)
-    private Double precio; 
+    private String nombre;
+
+    private String descripcion;
+
+    // CUNA, CAMA_EXTRA, MINIBAR, DESAYUNO, VINO, DECORACION
+    private String categoria;
+
+    private Double precio;
+
+    private Boolean disponible = true;
 }

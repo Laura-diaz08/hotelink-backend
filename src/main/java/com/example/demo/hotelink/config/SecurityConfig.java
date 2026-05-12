@@ -17,6 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.example.demo.hotelink.model.Usuario;
 import com.example.demo.hotelink.repository.UsuarioRepository;
 
 import java.util.List;
@@ -45,6 +46,9 @@ public class SecurityConfig {
                 .requestMatchers("/contacto").permitAll()
                 .requestMatchers(HttpMethod.GET, "/opiniones").permitAll()
                 .requestMatchers(HttpMethod.GET, "/opiniones/estadisticas").permitAll()
+                .requestMatchers("/auth/verificar").permitAll()
+                .requestMatchers("/auth/recuperar").permitAll()
+                .requestMatchers("/auth/recuperar/confirmar").permitAll()
                 .anyRequest().authenticated()            
             )
             
@@ -68,11 +72,8 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService(UsuarioRepository usuarioRepository) {
         return username -> {
-            com.example.demo.hotelink.model.Usuario miUsuario = usuarioRepository.findByNombre(username); 
-            
-            if (miUsuario == null) {
-                throw new UsernameNotFoundException("Usuario no encontrado en la base de datos");
-            }
+            Usuario miUsuario = usuarioRepository.findByNombre(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado en la base de datos"));
 
             return User.builder()
                     .username(miUsuario.getNombre())

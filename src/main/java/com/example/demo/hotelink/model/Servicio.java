@@ -21,4 +21,8 @@ public class Servicio {
     private Double precio;
 
     private Integer aforoMaximo;
+
+    private Boolean requiereEmpleado = false;
+
+    private String rolRequerido;
 }

@@ -5,4 +5,7 @@ import com.example.demo.hotelink.model.Factura;
 
 public interface FacturaRepository extends JpaRepository<Factura, Long> {
     boolean existsByReservaId(Long reservaId);
+
+    Factura findByReservaId(Long reservaId);
+    Factura findByUsuarioId(Long usuarioId);
 }

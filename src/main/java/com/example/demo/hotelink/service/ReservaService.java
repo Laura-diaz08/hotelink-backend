@@ -8,6 +8,7 @@ import com.example.demo.hotelink.model.Habitacion;
 import com.example.demo.hotelink.repository.ReservaRepository;
 import com.example.demo.hotelink.repository.TareaLimpiezaRepository;
 import com.example.demo.hotelink.repository.CargoReservaRepository;
+import com.example.demo.hotelink.repository.CitaRepository;
 import com.example.demo.hotelink.repository.FacturaRepository;
 import com.example.demo.hotelink.repository.HabitacionRepository;
 
@@ -43,7 +44,10 @@ public class ReservaService {
     private CargoReservaRepository cargoReservaRepository;
 
     @Autowired
-    private com.example.demo.hotelink.repository.CitaRepository citaRepository;
+    private CitaRepository citaRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     // Obtener todas
     public List<Reserva> findAll() {
@@ -188,14 +192,27 @@ public class ReservaService {
     // 3. Cancelar Reserva
     public ResponseEntity<?> cancelarReserva(Long id) {
         Reserva r = repo.findById(id).orElse(null);
-        if (r == null) {
+        if (r == null)
             return ResponseEntity.status(404).body(Map.of("error", "Reserva no encontrada"));
-        }
-        
-        // En lugar de borrarla de la BD, simplemente cambiamos su estado
+
         r.setEstado("CANCELADA");
         repo.save(r);
-        
+
+        // Enviar correo
+        if (r.getUsuario() != null && r.getUsuario().getEmail() != null) {
+            try {
+                emailService.enviarCancelacionReserva(
+                    r.getUsuario().getEmail(),
+                    r.getUsuario().getNombre(),
+                    "Habitación " + r.getHabitacion().getNumero() + " (" + r.getHabitacion().getTipo() + ")",
+                    r.getFechaEntrada().toString(),
+                    r.getFechaSalida().toString()
+                );
+            } catch (Exception e) {
+                System.err.println("Error enviando correo de cancelación: " + e.getMessage());
+            }
+        }
+
         return ResponseEntity.ok(Map.of("mensaje", "Reserva cancelada correctamente"));
     }
 

@@ -55,16 +55,17 @@ public class ReservaController {
     //Crear una reserva
     @PostMapping
     public ResponseEntity<?> save(@RequestHeader(name="Authorization", required=false) String auth,
-                                  @RequestBody Reserva r) {
+                                @RequestBody Reserva r) {
         if (!jwtService.usuarioValido(auth))
             return ResponseEntity.status(401).body(Map.of("error","Token inválido"));
 
-        //Impedir que un usuario reserve en nombre de otro
-        String usuarioToken = jwtService.obtenerNombre(auth.substring(7));
-
-        if (r.getUsuario() != null && !r.getUsuario().getNombre().equals(usuarioToken)) {
-            return ResponseEntity.status(403)
-                    .body(Map.of("error", "No puedes reservar con el nombre de otro usuario"));
+        // El admin puede reservar en nombre de cualquier cliente
+        if (!jwtService.adminValido(auth)) {
+            String usuarioToken = jwtService.obtenerNombre(auth.substring(7));
+            if (r.getUsuario() != null && !r.getUsuario().getNombre().equals(usuarioToken)) {
+                return ResponseEntity.status(403)
+                        .body(Map.of("error", "No puedes reservar con el nombre de otro usuario"));
+            }
         }
 
         return service.save(r);

@@ -2,6 +2,7 @@ package com.example.demo.hotelink.controller;
 
 import com.example.demo.hotelink.auth.JwtService;
 import com.example.demo.hotelink.model.Cita;
+import com.example.demo.hotelink.model.Rol;
 import com.example.demo.hotelink.repository.CitaRepository;
 import com.example.demo.hotelink.service.CitaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,4 +88,54 @@ public class CitaController {
             repository.findByUsuarioIdAndFechaHoraCitaBetween(usuarioId, inicioFecha, finFecha)
         );
     }
+
+    @GetMapping("/todas")
+    public ResponseEntity<?> todasLasCitas(
+            @RequestHeader(name="Authorization", required=false) String auth) {
+
+        if (!jwtService.usuarioValido(auth))
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime finSemana = ahora.plusDays(7);
+
+        return ResponseEntity.ok(
+            repository.findByFechaHoraCitaBetween(ahora, finSemana)
+        );
+    }
+
+    // Obtener citas sin empleado asignado
+    @GetMapping("/disponibles")
+    public ResponseEntity<?> getCitasDisponibles(
+            @RequestHeader(name="Authorization", required=false) String auth) {
+        if (!jwtService.usuarioValido(auth))
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+        
+        String token = auth.substring(7);
+        Rol rol = jwtService.obtenerRol(token);
+        
+        return ResponseEntity.ok(repository.findCitasDisponiblesPorRol(rol.name()));
+    }
+
+    // Asignarse una cita
+    @PutMapping("/{id}/asignar")
+    public ResponseEntity<?> asignarEmpleado(
+            @RequestHeader(name="Authorization", required=false) String auth,
+            @PathVariable Long id,
+            @RequestBody Map<String, Long> body) {
+        if (!jwtService.usuarioValido(auth))
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+        return service.asignarEmpleado(id, body.get("empleadoId"));
+    }
+
+    // Obtener citas de un empleado
+    @GetMapping("/empleado/{empleadoId}")
+    public ResponseEntity<?> getCitasEmpleado(
+            @RequestHeader(name="Authorization", required=false) String auth,
+            @PathVariable Long empleadoId) {
+        if (!jwtService.usuarioValido(auth))
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+        return ResponseEntity.ok(repository.findByEmpleadoId(empleadoId));
+    }
+    
 }

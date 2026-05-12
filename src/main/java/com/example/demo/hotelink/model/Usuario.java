@@ -30,4 +30,10 @@ public class Usuario {
     @NotNull    
     private Rol rol; 
 
+    private String codigoVerificacion;
+
+    private boolean verificado = false;
+
+    private String codigoRecuperacion;
+
 }

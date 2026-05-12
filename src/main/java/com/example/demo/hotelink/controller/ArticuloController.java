@@ -52,6 +52,22 @@ public class ArticuloController {
         return service.añadirCargo(reservaId, articuloId, cantidad);
     }
 
+    @PostMapping("/cargo/cliente")
+    public ResponseEntity<?> agregarCargoCliente(
+            @RequestHeader(name="Authorization", required=false) String auth,
+            @RequestBody Map<String, Object> body) {
+
+        if (!jwtService.usuarioValido(auth))
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+
+        Long reservaId = Long.valueOf(body.get("reservaId").toString());
+        Long articuloId = Long.valueOf(body.get("articuloId").toString());
+        Integer cantidad = Integer.valueOf(body.get("cantidad").toString());
+        Long usuarioId = Long.valueOf(body.get("usuarioId").toString());
+
+        return service.agregarCargoCliente(reservaId, articuloId, cantidad, usuarioId);
+    }
+
     // Obtener cargos de una reserva
     @GetMapping("/cargo/reserva/{reservaId}")
     public ResponseEntity<?> getCargos(

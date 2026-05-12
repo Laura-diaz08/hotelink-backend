@@ -2,6 +2,7 @@ package com.example.demo.hotelink.controller;
 
 import com.example.demo.hotelink.auth.JwtService;
 import com.example.demo.hotelink.model.Usuario;
+import com.example.demo.hotelink.repository.UsuarioRepository;
 import com.example.demo.hotelink.service.UsuarioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class UsuarioController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private UsuarioRepository repo;
 
     //Verifica si el token no pertenece a un ADMIN
     private boolean noEsAdmin(String auth) {
@@ -56,20 +60,14 @@ public class UsuarioController {
     //Crear usuario (el primero se permite sin token)
     @PostMapping
     public ResponseEntity<?> save(@RequestHeader(name="Authorization", required=false) String auth,
-                                  @RequestBody Usuario u) {
-
-        // Encriptamos la contraseña
-        if (u.getPassword() != null && !u.getPassword().isEmpty()) {
-            u.setPassword(passwordEncoder.encode(u.getPassword()));
-        }
+                                @RequestBody Usuario u) {
 
         if (service.noHayUsuarios()) {
             return service.save(u);
         }
 
-        //Solo puede crearlo si es ADMIN
         if (noEsAdmin(auth))
-            return ResponseEntity.status(403).body(Map.of("error","Solo ADMIN puede crear usuarios"));
+            return ResponseEntity.status(401).body(Map.of("error","Solo ADMIN puede crear usuarios"));
 
         return service.save(u);
     }
@@ -88,12 +86,22 @@ public class UsuarioController {
     
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@RequestHeader(name="Authorization", required=false) String auth,
-                                    @PathVariable Long id,
-                                    @RequestBody Usuario u) {
-        if (noEsAdmin(auth))
-            return ResponseEntity.status(403).body(Map.of("error","Solo ADMIN"));
+    public ResponseEntity<?> update(Long id, Usuario u) {
+        Usuario existente = repo.findById(id).orElse(null);
+        if (existente == null)
+            return ResponseEntity.status(404).body("Usuario no encontrado");
 
-        return service.update(id, u);
+        existente.setNombre(u.getNombre());
+        existente.setEmail(u.getEmail());
+
+        if (u.getPassword() != null && !u.getPassword().isBlank()) {
+            existente.setPassword(passwordEncoder.encode(u.getPassword()));
+        }
+
+        try {
+            return ResponseEntity.ok(repo.save(existente));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("Error actualizando usuario: " + e.getMessage());
+        }
     }
 }

@@ -33,6 +33,9 @@ public class HabitacionService {
     @Autowired 
     private TareaLimpiezaRepository tareaLimpiezaRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     private static final List<String> ESTADOS_VALIDOS = List.of("LIBRE", "OCUPADA", "MANTENIMIENTO");
 
     //Obtener todas las habitaciones
@@ -187,7 +190,7 @@ public class HabitacionService {
             // 2. (Opcional pero recomendado) Comprobar de nuevo si está libre por seguridad
             List<Habitacion> libres = repo.findDisponiblesPorFechas(inicio, fin);
             if (!libres.contains(habitacion)) {
-                return ResponseEntity.badRequest().body(Map.of("error", "La habitación ya no está disponible en esas fechas"));
+                return ResponseEntity.badRequest().body(Map.of("error", "La habitación ya está ocupada en esas fechas"));
             }
 
             // 3. Creamos y rellenamos la reserva
@@ -201,6 +204,20 @@ public class HabitacionService {
             
             // 4. Guardamos en la base de datos
             reservaRepository.save(nuevaReserva);
+
+            try {
+                emailService.enviarConfirmacionReserva(
+                    usuario.getEmail(),
+                    usuario.getNombre(),
+                    "Habitación " + habitacion.getNumero(),
+                    habitacion.getTipo(),
+                    inicio.toString(),
+                    fin.toString(),
+                    numeroHuespedes
+                );
+            } catch (Exception e) {
+                System.err.println("Error enviando correo de reserva: " + e.getMessage());
+            }
 
             return ResponseEntity.ok(Map.of("mensaje", "¡Reserva completada con éxito!", "reservaId", nuevaReserva.getId()));
 

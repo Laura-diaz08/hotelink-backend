@@ -63,6 +63,39 @@ public class ArticuloService {
         return ResponseEntity.ok(cargoRepository.save(cargo));
     }
 
+    public ResponseEntity<?> agregarCargoCliente(Long reservaId, Long articuloId, 
+                                               Integer cantidad, Long usuarioId) {
+        Reserva reserva = reservaRepository.findById(reservaId).orElse(null);
+        if (reserva == null)
+            return ResponseEntity.status(404).body(Map.of("error", "Reserva no encontrada"));
+
+        // Verificar que la reserva pertenece al cliente
+        if (!reserva.getUsuario().getId().equals(usuarioId))
+            return ResponseEntity.status(403)
+                .body(Map.of("error", "No tienes permiso para modificar esta reserva"));
+
+        // Solo si tiene check-in hecho
+        if (!Boolean.TRUE.equals(reserva.getCheckIn()))
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Solo puedes añadir cargos cuando hayas hecho el check-in"));
+
+        Articulo articulo = articuloRepository.findById(articuloId).orElse(null);
+        if (articulo == null)
+            return ResponseEntity.status(404).body(Map.of("error", "Artículo no encontrado"));
+
+        if (!articulo.getDisponible())
+            return ResponseEntity.badRequest().body(Map.of("error", "Artículo no disponible"));
+
+        CargoReserva cargo = new CargoReserva();
+        cargo.setReserva(reserva);
+        cargo.setArticulo(articulo);
+        cargo.setCantidad(cantidad);
+        cargo.setPrecioUnitario(articulo.getPrecio());
+        cargo.setFechaCargo(LocalDateTime.now());
+
+        return ResponseEntity.ok(cargoRepository.save(cargo));
+    }
+
     // Obtener cargos de una reserva
     public List<CargoReserva> getCargosDeReserva(Long reservaId) {
         return cargoRepository.findByReservaId(reservaId);

@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/verificar").permitAll()
                 .requestMatchers("/auth/recuperar").permitAll()
                 .requestMatchers("/auth/recuperar/confirmar").permitAll()
+                .requestMatchers(HttpMethod.GET, "/habitaciones/disponibles").permitAll()
                 .anyRequest().authenticated()            
             )
             
@@ -89,7 +90,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // Permitimos solo a tu frontend
-        configuration.setAllowedOrigins(List.of("http://localhost:4200")); 
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:4200",
+            "http://localhost",
+            "http://localhost:80"
+        ));
         
         // Permitimos los métodos HTTP comunes
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservaService {
@@ -250,5 +251,37 @@ public class ReservaService {
             dto.setUsuarioId(reserva.getUsuario().getId()); // añadir
         }
         return dto;
+    }
+
+    public ResponseEntity<?> reservarPorTipo(String tipo, LocalDate entrada, LocalDate salida, Long usuarioId, int huespedes) {
+        List<Habitacion> todasDelTipo = habitacionRepo.findByTipo(tipo);
+
+        List<Habitacion> disponibles = todasDelTipo.stream()
+            .filter(h -> !h.getEstado().equals("MANTENIMIENTO"))
+            .filter(h -> {
+                List<Reserva> solapes = repo.findByHabitacionIdAndFechas(h.getId(), entrada, salida);
+                return solapes.isEmpty();
+            })
+            .collect(Collectors.toList());
+
+        if (disponibles.isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("error", "No hay habitaciones disponibles de ese tipo en esas fechas"));
+
+        // Elegir una aleatoria
+        Habitacion elegida = disponibles.get(new java.util.Random().nextInt(disponibles.size()));
+
+        Reserva r = new Reserva();
+        r.setHabitacion(elegida);
+        r.setFechaEntrada(entrada);
+        r.setFechaSalida(salida);
+        r.setNumeroHuespedes(huespedes);
+        r.setEstado("CONFIRMADA");
+
+        com.example.demo.hotelink.model.Usuario usuario = new com.example.demo.hotelink.model.Usuario();
+        usuario.setId(usuarioId);
+        r.setUsuario(usuario);
+
+        Reserva saved = repo.save(r);
+        return ResponseEntity.ok(saved);
     }
 }

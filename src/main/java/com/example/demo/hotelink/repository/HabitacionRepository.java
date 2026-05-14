@@ -23,5 +23,7 @@ public interface HabitacionRepository extends JpaRepository<Habitacion, Long> {
 
     @Query("SELECT COUNT(h) FROM Habitacion h WHERE TRIM(UPPER(h.estado)) = TRIM(UPPER(:estado))")
     long countByEstado(@Param("estado") String estado);
+
+    List<Habitacion> findByTipo(String tipo);
     
 }

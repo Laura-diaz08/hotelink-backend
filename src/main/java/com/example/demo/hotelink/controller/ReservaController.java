@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,5 +147,28 @@ public class ReservaController {
             return ResponseEntity.status(401).body("Token inválido");
         }
         return ResponseEntity.ok(repository.findByUsuarioId(id));
+    }
+
+    @PostMapping("/por-tipo")
+    public ResponseEntity<?> reservarPorTipo(
+            @RequestHeader(name="Authorization", required=false) String auth,
+            @RequestBody Map<String, Object> body) {
+
+        if (!jwtService.usuarioValido(auth))
+            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
+
+        String tipo = (String) body.get("tipo");
+        String entrada = (String) body.get("fechaEntrada");
+        String salida = (String) body.get("fechaSalida");
+        Long usuarioId = Long.valueOf(body.get("usuarioId").toString());
+        int huespedes = Integer.parseInt(body.get("numeroHuespedes").toString());
+
+        return service.reservarPorTipo(
+            tipo,
+            LocalDate.parse(entrada),
+            LocalDate.parse(salida),
+            usuarioId,
+            huespedes
+        );
     }
 }

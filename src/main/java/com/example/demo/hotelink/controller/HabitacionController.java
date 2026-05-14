@@ -2,14 +2,19 @@ package com.example.demo.hotelink.controller;
 
 import com.example.demo.hotelink.auth.JwtService;
 import com.example.demo.hotelink.model.Habitacion;
+import com.example.demo.hotelink.model.Reserva;
+import com.example.demo.hotelink.repository.HabitacionRepository;
+import com.example.demo.hotelink.repository.ReservaRepository;
 import com.example.demo.hotelink.service.HabitacionService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/habitaciones")
@@ -21,6 +26,12 @@ public class HabitacionController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private HabitacionRepository repo;
+
+    @Autowired
+    private ReservaRepository reservaRepository;
 
     // --- ENDPOINTS PÚBLICOS / USUARIOS ---
 
@@ -51,14 +62,32 @@ public class HabitacionController {
      */
     @GetMapping("/disponibles")
     public ResponseEntity<?> buscarDisponibles(
-            @RequestHeader(name="Authorization", required=false) String auth,
-            @RequestParam String inicio,
-            @RequestParam String fin) {
+            @RequestParam String tipo,
+            @RequestParam String entrada,
+            @RequestParam String salida) {
 
-        if (!jwtService.usuarioValido(auth))
-            return ResponseEntity.status(401).body(Map.of("error", "Token inválido"));
 
-        return service.findDisponiblesPorFechas(inicio, fin);
+        LocalDate fechaEntrada = LocalDate.parse(entrada);
+        LocalDate fechaSalida = LocalDate.parse(salida);
+
+        List<Habitacion> todasDelTipo = repo.findByTipo(tipo);
+
+        List<Habitacion> disponibles = todasDelTipo.stream()
+            .filter(h -> !h.getEstado().equals("MANTENIMIENTO"))
+            .filter(h -> {
+                List<Reserva> solapes = reservaRepository.findByHabitacionIdAndFechas(
+                    h.getId(), fechaEntrada, fechaSalida
+                );
+                return solapes.isEmpty();
+            })
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of(
+            "tipo", tipo,
+            "disponibles", disponibles.size(),
+            "precio", disponibles.isEmpty() ? 0 : disponibles.get(0).getPrecio(),
+            "capacidad", disponibles.isEmpty() ? 0 : disponibles.get(0).getCapacidad()
+        ));
     }
 
     /**
@@ -180,4 +209,5 @@ public class HabitacionController {
         h.setId(id);
         return service.save(h);
     }
+
 }

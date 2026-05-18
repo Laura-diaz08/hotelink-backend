@@ -16,7 +16,6 @@ import com.example.demo.hotelink.repository.FacturaRepository;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
-import com.itextpdf.text.pdf.draw.LineSeparator;
 
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
@@ -49,84 +48,126 @@ public class FacturaService {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 50, 50, 50, 50);
-        PdfWriter.getInstance(document, baos);
+        PdfWriter.getInstance(document, baos); // ← línea crítica que faltaba
         document.open();
 
-        BaseColor dorado = new BaseColor(201, 168, 76);
-        BaseColor oscuro = new BaseColor(15, 15, 15);
-        BaseColor gris = new BaseColor(107, 114, 128);
+        // COLORES HOTELINK
+        BaseColor orange = new BaseColor(255, 132, 87);
+        BaseColor pink = new BaseColor(255, 95, 162);
+        BaseColor dark = new BaseColor(31, 41, 55);
+        BaseColor gris = new BaseColor(95, 100, 112);
+        BaseColor cream = new BaseColor(255, 248, 242);
+        BaseColor white = new BaseColor(255, 255, 255);
+        BaseColor mintBg = new BaseColor(232, 248, 248);
+        BaseColor borderColor = new BaseColor(229, 231, 235);
 
-        Font fontTitulo = new Font(Font.FontFamily.HELVETICA, 28, Font.BOLD, dorado);
-        Font fontSubtitulo = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, gris);
-        Font fontNormal = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, oscuro);
-        Font fontNegrita = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, oscuro);
-        Font fontTotal = new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD, dorado);
-
-        Paragraph titulo = new Paragraph("HOTELINK", fontTitulo);
-        titulo.setAlignment(Element.ALIGN_CENTER);
-        document.add(titulo);
-
-        Paragraph subtitulo = new Paragraph("Calle Ancha, 12 · Cádiz, España · info@hotelink.com", fontSubtitulo);
-        subtitulo.setAlignment(Element.ALIGN_CENTER);
-        subtitulo.setSpacingAfter(20);
-        document.add(subtitulo);
-
-        LineSeparator line = new LineSeparator(1, 100, dorado, Element.ALIGN_CENTER, -2);
-        document.add(new Chunk(line));
-
-        Paragraph facturaTitle = new Paragraph("\nFACTURA #" + factura.getId(), fontNegrita);
-        facturaTitle.setSpacingBefore(15);
-        document.add(facturaTitle);
+        // FUENTES
+        Font fontLogo = new Font(Font.FontFamily.HELVETICA, 36, Font.BOLD, orange);
+        Font fontLogoLink = new Font(Font.FontFamily.HELVETICA, 36, Font.BOLD, pink);
+        Font fontSubtitulo = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, gris);
+        Font fontNormal = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, dark);
+        Font fontNegrita = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, dark);
+        Font fontSeccion = new Font(Font.FontFamily.HELVETICA, 8, Font.BOLD, orange);
+        Font fontTotal = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, orange);
+        Font fontBlanco = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, white);
+        Font fontPie = new Font(Font.FontFamily.HELVETICA, 9, Font.ITALIC, gris);
+        Font fontInfoTitle = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD, white);
+        Font fontInfoNormal = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, white);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        document.add(new Paragraph("Fecha: " + factura.getFecha().format(formatter), fontNormal));
-        document.add(new Paragraph("Estado: " + factura.getEstado(), fontNormal));
 
-        Paragraph clienteTitle = new Paragraph("\nDATOS DEL CLIENTE", fontNegrita);
-        clienteTitle.setSpacingBefore(15);
-        document.add(clienteTitle);
+        PdfPTable header = new PdfPTable(2);
+        header.setWidthPercentage(100);
+        header.setWidths(new float[]{3, 2});
+        header.setSpacingAfter(20);
 
+        // Celda logo
+        Paragraph logoParrafo = new Paragraph();
+        logoParrafo.add(new Chunk("Hote", fontLogo));
+        logoParrafo.add(new Chunk("link", fontLogoLink));
+        PdfPCell logoCell = new PdfPCell();
+        logoCell.addElement(logoParrafo);
+        logoCell.addElement(new Paragraph("Sistema de Gestión Hotelera · Cádiz, España", fontSubtitulo));
+        logoCell.setBorder(Rectangle.NO_BORDER);
+        logoCell.setPadding(15);
+        logoCell.setBackgroundColor(cream);
+        header.addCell(logoCell);
+
+        // Celda info factura
+        PdfPCell infoCell = new PdfPCell();
+        infoCell.setBackgroundColor(orange);
+        infoCell.setBorder(Rectangle.NO_BORDER);
+        infoCell.setPadding(15);
+        infoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        infoCell.addElement(new Paragraph("FACTURA", fontInfoTitle));
+        infoCell.addElement(new Paragraph("N.º " + factura.getId(), fontInfoNormal));
+        infoCell.addElement(new Paragraph("Fecha: " + factura.getFecha().format(formatter), fontInfoNormal));
+        infoCell.addElement(new Paragraph("Estado: " + factura.getEstado(), fontInfoNormal));
+        header.addCell(infoCell);
+        document.add(header);
+
+
+        PdfPTable datosTable = new PdfPTable(2);
+        datosTable.setWidthPercentage(100);
+        datosTable.setWidths(new float[]{1, 1});
+        datosTable.setSpacingAfter(20);
+
+        // Celda cliente
+        PdfPCell clienteCell = new PdfPCell();
+        clienteCell.setBorder(Rectangle.NO_BORDER);
+        clienteCell.setBackgroundColor(cream);
+        clienteCell.setPadding(12);
+        Paragraph clienteTitulo = new Paragraph("DATOS DEL CLIENTE", fontSeccion);
+        clienteTitulo.setSpacingAfter(6);
+        clienteCell.addElement(clienteTitulo);
         if (factura.getUsuario() != null) {
-            document.add(new Paragraph("Nombre: " + factura.getUsuario().getNombre(), fontNormal));
-            document.add(new Paragraph("Email: " + factura.getUsuario().getEmail(), fontNormal));
+            clienteCell.addElement(new Paragraph(factura.getUsuario().getNombre(), fontNegrita));
+            clienteCell.addElement(new Paragraph(factura.getUsuario().getEmail(), fontNormal));
         }
+        datosTable.addCell(clienteCell);
 
-        Paragraph reservaTitle = new Paragraph("\nDETALLES DE LA ESTANCIA", fontNegrita);
-        reservaTitle.setSpacingBefore(15);
-        document.add(reservaTitle);
-
+        // Celda estancia
+        PdfPCell estanciaCell = new PdfPCell();
+        estanciaCell.setBorder(Rectangle.NO_BORDER);
+        estanciaCell.setBackgroundColor(mintBg);
+        estanciaCell.setPadding(12);
+        Paragraph estanciaTitulo = new Paragraph("DETALLES DE LA ESTANCIA", fontSeccion);
+        estanciaTitulo.setSpacingAfter(6);
+        estanciaCell.addElement(estanciaTitulo);
         if (factura.getReserva() != null) {
             Reserva reserva = factura.getReserva();
-            document.add(new Paragraph("Habitación: " + reserva.getHabitacion().getNumero() +
-                " (" + reserva.getHabitacion().getTipo() + ")", fontNormal));
-            document.add(new Paragraph("Entrada: " + reserva.getFechaEntrada().format(formatter), fontNormal));
-            document.add(new Paragraph("Salida: " + reserva.getFechaSalida().format(formatter), fontNormal));
-
+            estanciaCell.addElement(new Paragraph(
+                "Habitación " + reserva.getHabitacion().getNumero() +
+                " · " + reserva.getHabitacion().getTipo(), fontNegrita));
+            estanciaCell.addElement(new Paragraph(
+                "Entrada: " + reserva.getFechaEntrada().format(formatter), fontNormal));
+            estanciaCell.addElement(new Paragraph(
+                "Salida: " + reserva.getFechaSalida().format(formatter), fontNormal));
             long noches = java.time.temporal.ChronoUnit.DAYS.between(
                 reserva.getFechaEntrada(), reserva.getFechaSalida());
-            double precioHabitacion = reserva.getHabitacion().getPrecio();
-            document.add(new Paragraph("Noches: " + noches + " x " + precioHabitacion + "€ = " +
-                (noches * precioHabitacion) + "€", fontNormal));
+            estanciaCell.addElement(new Paragraph(noches + " noches", fontNormal));
         }
 
-        Paragraph desglose = new Paragraph("\nDESGLOSE", fontNegrita);
-        desglose.setSpacingBefore(15);
-        document.add(desglose);
+        datosTable.addCell(estanciaCell);
+        document.add(datosTable);
+
+        Paragraph desgloseTitle = new Paragraph("DESGLOSE DE CARGOS", fontSeccion);
+        desgloseTitle.setSpacingAfter(8);
+        document.add(desgloseTitle);
 
         PdfPTable tabla = new PdfPTable(3);
         tabla.setWidthPercentage(100);
-        tabla.setSpacingBefore(10);
+        tabla.setSpacingBefore(5);
+        tabla.setSpacingAfter(15);
         tabla.setWidths(new float[]{5, 2, 2});
 
-        PdfPCell[] headers = {
-            new PdfPCell(new Phrase("Concepto", fontNegrita)),
-            new PdfPCell(new Phrase("Cantidad", fontNegrita)),
-            new PdfPCell(new Phrase("Importe", fontNegrita))
-        };
-        for (PdfPCell h : headers) {
-            h.setBackgroundColor(dorado);
-            h.setPadding(8);
-            tabla.addCell(h);
+        // Cabecera tabla
+        for (String cab : new String[]{"CONCEPTO", "DETALLE", "IMPORTE"}) {
+            PdfPCell cell = new PdfPCell(new Phrase(cab, fontBlanco));
+            cell.setBackgroundColor(dark);
+            cell.setPadding(10);
+            cell.setBorder(Rectangle.NO_BORDER);
+            tabla.addCell(cell);
         }
 
         if (factura.getReserva() != null) {
@@ -136,59 +177,77 @@ public class FacturaService {
             double precioHabitacion = reserva.getHabitacion().getPrecio();
             double subtotalHab = noches * precioHabitacion;
 
-            addFilaTabla(tabla,
+            addFilaTablaEstilo(tabla,
                 "Habitación " + reserva.getHabitacion().getNumero() +
                 " (" + reserva.getHabitacion().getTipo() + ")",
                 noches + " noches x " + precioHabitacion + "€",
                 subtotalHab + "€",
-                fontNormal);
+                fontNormal, cream);
 
             LocalDateTime inicio = reserva.getFechaEntrada().atStartOfDay();
             LocalDateTime fin = reserva.getFechaSalida().atTime(23, 59, 59);
+            List<Cita> citas = citaRepository.findByUsuarioIdAndFechaHoraCitaBetween(
+                reserva.getUsuario().getId(), inicio, fin);
 
-            List<Cita> citas = citaRepository
-                .findByUsuarioIdAndFechaHoraCitaBetween(
-                    reserva.getUsuario().getId(), inicio, fin);
-
+            boolean alterno = true;
             for (Cita cita : citas) {
                 if (!"CANCELADA".equals(cita.getEstado()) && cita.getServicio() != null) {
                     double precio = cita.getServicio().getPrecio() != null ?
                         cita.getServicio().getPrecio() : 0.0;
-                    addFilaTabla(tabla,
+                    addFilaTablaEstilo(tabla,
                         "Servicio: " + cita.getServicio().getNombre(),
                         cita.getFechaHoraCita().format(
-                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                            java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")),
                         precio + "€",
-                        fontNormal);
+                        fontNormal, alterno ? cream : white);
+                    alterno = !alterno;
                 }
             }
 
-            List<CargoReserva> cargos =
-                cargoReservaRepository.findByReservaId(reserva.getId());
-
+            List<CargoReserva> cargos = cargoReservaRepository.findByReservaId(reserva.getId());
             for (CargoReserva cargo : cargos) {
                 if (cargo.getArticulo() != null) {
                     double subtotal = cargo.getCantidad() * cargo.getPrecioUnitario();
-                    addFilaTabla(tabla,
+                    addFilaTablaEstilo(tabla,
                         "Artículo: " + cargo.getArticulo().getNombre(),
                         cargo.getCantidad() + " x " + cargo.getPrecioUnitario() + "€",
                         subtotal + "€",
-                        fontNormal);
+                        fontNormal, alterno ? cream : white);
+                    alterno = !alterno;
                 }
             }
         }
-
         document.add(tabla);
 
-        document.add(new Chunk(new LineSeparator(1, 100, dorado, Element.ALIGN_CENTER, -2)));
-        Paragraph total = new Paragraph("\nTOTAL: " + factura.getTotal() + "€", fontTotal);
-        total.setAlignment(Element.ALIGN_RIGHT);
-        total.setSpacingBefore(10);
-        document.add(total);
+        // =============================================
+        // TOTAL
+        // =============================================
+        PdfPTable totalTable = new PdfPTable(2);
+        totalTable.setWidthPercentage(50);
+        totalTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        totalTable.setWidths(new float[]{1, 1});
+        totalTable.setSpacingBefore(10);
 
+        PdfPCell totalLabel = new PdfPCell(new Phrase("TOTAL A PAGAR", fontBlanco));
+        totalLabel.setBackgroundColor(orange);
+        totalLabel.setBorder(Rectangle.NO_BORDER);
+        totalLabel.setPadding(12);
+        totalTable.addCell(totalLabel);
+
+        PdfPCell totalValor = new PdfPCell(new Phrase(factura.getTotal() + " €", fontTotal));
+        totalValor.setBackgroundColor(cream);
+        totalValor.setBorder(Rectangle.NO_BORDER);
+        totalValor.setPadding(12);
+        totalValor.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        totalTable.addCell(totalValor);
+        document.add(totalTable);
+
+        // =============================================
+        // PIE DE PÁGINA
+        // =============================================
         Paragraph pie = new Paragraph(
-            "\n\nGracias por elegir Hotelink. Esperamos volver a recibirle pronto.",
-            fontSubtitulo);
+            "\n\nGracias por elegir Hotelink · Calle Ancha, 12 · Cádiz, España · info@hotelink.com",
+            fontPie);
         pie.setAlignment(Element.ALIGN_CENTER);
         document.add(pie);
 
@@ -196,14 +255,17 @@ public class FacturaService {
         return baos.toByteArray();
     }
 
-    private void addFilaTabla(PdfPTable tabla, String concepto, String cantidad, 
-                           String importe, Font font) {
+    private void addFilaTablaEstilo(PdfPTable tabla, String concepto, String detalle,
+                                    String importe, Font font, BaseColor bg) {
         PdfPCell c1 = new PdfPCell(new Phrase(concepto, font));
-        PdfPCell c2 = new PdfPCell(new Phrase(cantidad, font));
+        PdfPCell c2 = new PdfPCell(new Phrase(detalle, font));
         PdfPCell c3 = new PdfPCell(new Phrase(importe, font));
-        c1.setPadding(6);
-        c2.setPadding(6);
-        c3.setPadding(6);
+        for (PdfPCell c : new PdfPCell[]{c1, c2, c3}) {
+            c.setPadding(8);
+            c.setBorder(Rectangle.BOTTOM);
+            c.setBorderColor(new BaseColor(229, 231, 235));
+            c.setBackgroundColor(bg);
+        }
         tabla.addCell(c1);
         tabla.addCell(c2);
         tabla.addCell(c3);

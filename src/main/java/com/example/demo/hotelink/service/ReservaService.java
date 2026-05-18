@@ -7,6 +7,7 @@ import com.example.demo.hotelink.model.Factura;
 import com.example.demo.hotelink.model.Habitacion;
 import com.example.demo.hotelink.repository.ReservaRepository;
 import com.example.demo.hotelink.repository.TareaLimpiezaRepository;
+import com.example.demo.hotelink.repository.UsuarioRepository;
 import com.example.demo.hotelink.repository.CargoReservaRepository;
 import com.example.demo.hotelink.repository.CitaRepository;
 import com.example.demo.hotelink.repository.FacturaRepository;
@@ -49,6 +50,9 @@ public class ReservaService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     // Obtener todas
     public List<Reserva> findAll() {
@@ -267,8 +271,11 @@ public class ReservaService {
         if (disponibles.isEmpty())
             return ResponseEntity.badRequest().body(Map.of("error", "No hay habitaciones disponibles de ese tipo en esas fechas"));
 
-        // Elegir una aleatoria
         Habitacion elegida = disponibles.get(new java.util.Random().nextInt(disponibles.size()));
+
+        // Cargar el usuario completo desde la BD
+        com.example.demo.hotelink.model.Usuario usuario = usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Reserva r = new Reserva();
         r.setHabitacion(elegida);
@@ -276,12 +283,25 @@ public class ReservaService {
         r.setFechaSalida(salida);
         r.setNumeroHuespedes(huespedes);
         r.setEstado("CONFIRMADA");
-
-        com.example.demo.hotelink.model.Usuario usuario = new com.example.demo.hotelink.model.Usuario();
-        usuario.setId(usuarioId);
         r.setUsuario(usuario);
 
         Reserva saved = repo.save(r);
+
+        // Enviar correo de confirmación
+        try {
+            emailService.enviarConfirmacionReserva(
+                usuario.getEmail(),
+                usuario.getNombre(),
+                "Habitación " + elegida.getNumero(),
+                elegida.getTipo(),
+                entrada.toString(),
+                salida.toString(),
+                huespedes
+            );
+        } catch (Exception e) {
+            System.err.println("Error enviando correo de reserva: " + e.getMessage());
+        }
+
         return ResponseEntity.ok(saved);
     }
 }

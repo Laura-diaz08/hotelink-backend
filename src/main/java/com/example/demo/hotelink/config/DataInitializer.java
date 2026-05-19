@@ -18,6 +18,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private ArticuloRepository articuloRepository;
+    
 
     @Override
     public void run(String... args) throws Exception {

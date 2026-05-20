@@ -28,5 +28,5 @@ public class Incidencia {
 
     @ManyToOne
     @JoinColumn(name = "responsable_id")
-    private Usuario responsable; // opcional
+    private Usuario responsable;
 }

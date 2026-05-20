@@ -16,7 +16,7 @@ public class Promocion {
 
     private String nombre;
 
-    private Double descuento; // %
+    private Double descuento; 
 
     private LocalDate inicio;
     private LocalDate fin;

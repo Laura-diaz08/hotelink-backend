@@ -72,7 +72,7 @@ public class ReservaController {
         return service.save(r);
     }
 
-    //Eliminar una reserva de la base de datos (Físico)
+    //Eliminar una reserva de la base de datos 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@RequestHeader(name="Authorization", required=false) String auth,
                                     @PathVariable Long id) {
@@ -84,7 +84,7 @@ public class ReservaController {
 
     // --- NUEVOS MÉTODOS DE GESTIÓN ---
 
-    // 1. Check-In (¡Ojo! Cambiado a PutMapping para que coincida con Angular)
+    // 1. Check-In 
    @PutMapping("/{id}/checkin")
     public ResponseEntity<?> checkIn(@RequestHeader(name="Authorization", required=false) String auth,
                                      @PathVariable Long id) {
@@ -118,7 +118,7 @@ public class ReservaController {
         }
     }
 
-    // 3. Cancelar Reserva (El método que nos faltaba)
+    // 3. Cancelar Reserva 
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<?> cancelarReserva(@RequestHeader(name="Authorization", required=false) String auth,
                                              @PathVariable Long id) {

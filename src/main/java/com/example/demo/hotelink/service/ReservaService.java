@@ -248,11 +248,11 @@ public class ReservaService {
         if (reserva.getHabitacion() != null) {
             dto.setNumeroHabitacion(reserva.getHabitacion().getNumero());
             dto.setTipoHabitacion(reserva.getHabitacion().getTipo());
-            dto.setPrecioHabitacion(reserva.getHabitacion().getPrecio()); // añadir
+            dto.setPrecioHabitacion(reserva.getHabitacion().getPrecio()); 
         }
         if (reserva.getUsuario() != null) {
             dto.setNombreUsuario(reserva.getUsuario().getNombre());
-            dto.setUsuarioId(reserva.getUsuario().getId()); // añadir
+            dto.setUsuarioId(reserva.getUsuario().getId()); 
         }
         return dto;
     }

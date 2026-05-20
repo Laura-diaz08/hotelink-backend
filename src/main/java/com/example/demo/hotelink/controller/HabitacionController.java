@@ -169,7 +169,7 @@ public class HabitacionController {
 
     @GetMapping("/admin/resumen")
     public ResponseEntity<?> getResumen(@RequestHeader(name="Authorization", required=false) String auth) {
-        // Imprimimos en la consola de tu servidor para ver qué token recibe exactamente
+
         System.out.println("Token recibido en el Backend: " + auth);
 
         if (!jwtService.adminValido(auth)) {
@@ -182,7 +182,7 @@ public class HabitacionController {
 
     @GetMapping("/actualizadas")
     public ResponseEntity<List<Habitacion>> getHabitacionesActualizadas() {
-        // Llamamos al método que ya tienes en tu Service de Java
+
         List<Habitacion> lista = service.obtenerHabitacionesActualizadas();
         return ResponseEntity.ok(lista);
     }

@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tareas-limpieza")
-@CrossOrigin(origins = "*") // Imprescindible para Angular
+@CrossOrigin(origins = "*") 
 public class TareaLimpiezaController {
 
     @Autowired

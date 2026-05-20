@@ -24,7 +24,7 @@ public class Reserva {
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Usuario usuario; // quien hizo la reserva
+    private Usuario usuario; 
 
     @ManyToOne
     @JoinColumn(name = "habitacion_id")

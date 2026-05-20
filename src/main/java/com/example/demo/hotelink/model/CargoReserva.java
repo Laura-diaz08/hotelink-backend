@@ -27,7 +27,7 @@ public class CargoReserva {
 
     private LocalDateTime fechaCargo;
 
-    // Método helper para calcular el subtotal
+    // Método para calcular el subtotal
     public Double getSubtotal() {
         if (precioUnitario == null || cantidad == null) return 0.0;
         return precioUnitario * cantidad;

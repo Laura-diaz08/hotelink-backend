@@ -187,7 +187,7 @@ public class HabitacionService {
                 return ResponseEntity.badRequest().body(Map.of("error", "Habitación o usuario no encontrados"));
             }
 
-            // 2. (Opcional pero recomendado) Comprobar de nuevo si está libre por seguridad
+            // 2. Comprobar de nuevo si está libre por seguridad
             List<Habitacion> libres = repo.findDisponiblesPorFechas(inicio, fin);
             if (!libres.contains(habitacion)) {
                 return ResponseEntity.badRequest().body(Map.of("error", "La habitación ya está ocupada en esas fechas"));
